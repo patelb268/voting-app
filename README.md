@@ -1,100 +1,74 @@
-Example Voting App
-=========
+# Voting App with Docker - README
 
-A simple distributed application running across multiple Docker containers.
-
-Getting started
----------------
-
-Download [Docker Desktop](https://www.docker.com/products/docker-desktop) for Mac or Windows. [Docker Compose](https://docs.docker.com/compose) will be automatically installed. On Linux, make sure you have the latest version of [Compose](https://docs.docker.com/compose/install/). 
+![image](https://github.com/patelb268/voting-app/assets/109325051/964b1e3a-fa40-4f82-b972-703c8e2c5002)
 
 
-## Linux Containers
+The Voting App is a sample application developed to learn Docker and showcase how different components can be containerized and orchestrated. This app allows users to vote for their favorite options, processes the votes using a .NET worker, stores the results in a PostgreSQL database, and displays the real-time results using a Node.js web application.
 
-The Linux stack uses Python, Node.js, .NET Core (or optionally Java), with Redis for messaging and Postgres for storage.
+## Components and Technologies Used
 
-> If you're using [Docker Desktop on Windows](https://store.docker.com/editions/community/docker-ce-desktop-windows), you can run the Linux version by [switching to Linux containers](https://docs.docker.com/docker-for-windows/#switch-between-windows-and-linux-containers), or run the Windows containers version.
+- Web Application: Python
+- In-Memory Database: Redis
+- Worker: .NET
+- Persistent Database: PostgreSQL
+- Result Display: Node.js
 
-Run in this directory:
-```
-docker-compose up
-```
-The app will be running at [http://localhost:5000](http://localhost:5000), and the results will be at [http://localhost:5001](http://localhost:5001).
+## Prerequisites
 
-Alternately, if you want to run it on a [Docker Swarm](https://docs.docker.com/engine/swarm/), first make sure you have a swarm. If you don't, run:
-```
-docker swarm init
-```
-Once you have your swarm, in this directory run:
-```
-docker stack deploy --compose-file docker-stack.yml vote
-```
+Before running the Voting App, ensure you have the following installed:
 
-## Windows Containers
+- Docker: Make sure you have Docker installed on your system. You can download it from [here](https://www.docker.com/products/docker-desktop).
 
-An alternative version of the app uses Windows containers based on Nano Server. This stack runs on .NET Core, using [NATS](https://nats.io) for messaging and [TiDB](https://github.com/pingcap/tidb) for storage.
+## Getting Started
 
-You can build from source using:
+1. Clone the repository:
 
-```
-docker-compose -f docker-compose-windows.yml build
-```
+       git clone <repository-url>
+       cd voting-app
+   
+2. Build the Docker images:
+   
+        docker-compose build
 
-Then run the app using:
+This command will start all the containers required for the Voting App.
 
-```
-docker-compose -f docker-compose-windows.yml up -d
-```
+3. Access the application:
 
-> Or in a Windows swarm, run `docker stack deploy -c docker-stack-windows.yml vote`
+Web Application: Open your browser and visit http://localhost:80 to access the voting web application.
+Result Display: Open your browser and visit http://localhost:3000 to see the real-time results.
 
-The app will be running at [http://localhost:5000](http://localhost:5000), and the results will be at [http://localhost:5001](http://localhost:5001).
+## Application Architecture
+The Voting App is composed of the following components:
 
+- Web Application (Python):
 
-Run the app in Kubernetes
--------------------------
+    - The front-end of the application where users can vote for their favorite options.
 
-The folder k8s-specifications contains the yaml specifications of the Voting App's services.
+- In-Memory Database (Redis):
 
-First create the vote namespace
+    - Used to store the temporary votes before they are processed and stored in the persistent database.
+  
+- Worker (.NET):
 
-```
-$ kubectl create namespace vote
-```
+    - A background worker written in .NET that processes the votes and updates the results in the PostgreSQL database.
 
-Run the following command to create the deployments and services objects:
-```
-$ kubectl create -f k8s-specifications/
-deployment "db" created
-service "db" created
-deployment "redis" created
-service "redis" created
-deployment "result" created
-service "result" created
-deployment "vote" created
-service "vote" created
-deployment "worker" created
-```
+- Persistent Database (PostgreSQL):
+    - Stores the results of the votes.
+    
+- Result Display (Node.js):
+    - Displays the real-time results of the votes using a Node.js application.
 
-The vote interface is then available on port 31000 on each host of the cluster, the result one is available on port 31001.
+### How the App Works
+- Users can access the web application (http://localhost:80) and vote for their preferred options.
 
-Architecture
------
+- The votes are temporarily stored in the Redis in-memory database.
 
-![Architecture diagram](architecture.png)
+- The .NET worker reads the votes from Redis, processes them, and updates the results in the PostgreSQL database.
 
-* A front-end web app in [Python](/vote) or [ASP.NET Core](/vote/dotnet) which lets you vote between two options
-* A [Redis](https://hub.docker.com/_/redis/) or [NATS](https://hub.docker.com/_/nats/) queue which collects new votes
-* A [.NET Core](/worker/src/Worker), [Java](/worker/src/main) or [.NET Core 2.1](/worker/dotnet) worker which consumes votes and stores them in…
-* A [Postgres](https://hub.docker.com/_/postgres/) or [TiDB](https://hub.docker.com/r/dockersamples/tidb/tags/) database backed by a Docker volume
-* A [Node.js](/result) or [ASP.NET Core SignalR](/result/dotnet) webapp which shows the results of the voting in real time
+- The Node.js result display application fetches the latest vote results from the PostgreSQL database and presents them in real-time on the browser (http://localhost:3000).
 
+### Cleaning Up
+- To stop and remove the containers, network, and volumes created by the Voting App, use the following command:
 
-Notes
------
-
-The voting application only accepts one vote per client. It does not register votes if a vote has already been submitted from a client.
-
-This isn't an example of a properly architected perfectly designed distributed app... it's just a simple 
-example of the various types of pieces and languages you might see (queues, persistent data, etc), and how to 
-deal with them in Docker at a basic level. 
+```bash
+docker-compose down
